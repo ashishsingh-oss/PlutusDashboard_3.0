@@ -1,0 +1,13 @@
+{
+  "name": "plutus_dashboard_3",
+  "version": "1.0.0",
+  "description": "Plutus dashboard with team / employee filters and weekly metric tables",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests configured\""
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.4"
+  }
+}

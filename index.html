@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plutus Dashboard 3.0 · Team metrics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #05080f;
+      --surface3:     #14203a;
+      --border:       rgba(80, 120, 200, 0.14);
+      --border-hi:    rgba(130, 180, 255, 0.28);
+      --text:         #e8efff;
+      --muted:        #7a90b8;
+      --dim:          #3d5070;
+      --accent:       #7eb8ff;
+      --accent2:      #a78bfa;
+      --gold:         #e2b96a;
+      --gold-soft:    rgba(226, 185, 106, 0.12);
+      --green:        #4de8a4;
+      --red:          #ff6b8a;
+      --cyan:         #67e8f9;
+      --mono:         'DM Mono', monospace;
+      --sans:         'DM Sans', sans-serif;
+      --serif:        'Cormorant Garamond', serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 900px 600px at 10% -5%,  rgba(94,147,255,0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 700px 500px at 90% 5%,   rgba(167,139,250,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 600px 400px at 50% 110%, rgba(77,232,164,0.04) 0%, transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body > * { position: relative; z-index: 1; }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(180deg, rgba(5,8,15,0.97) 0%, rgba(5,8,15,0.88) 100%);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 14px; }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 700;
+      color: #05080f;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px rgba(126,184,255,0.25);
+    }
+
+    .header-title-block { display: flex; flex-direction: column; gap: 3px; }
+
+    .header h1 {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.015em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .header h1 span { color: var(--accent); opacity: 0.45; font-weight: 300; margin: 0 4px; }
+
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+    }
+
+    .header-month { color: var(--gold); text-transform: uppercase; letter-spacing: 0.14em; }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 11px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .filters {
+      background: rgba(8,13,24,0.8);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .filters-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .filter-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      flex-shrink: 0;
+      padding-top: 5px;
+      font-size: 9.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--dim);
+      font-weight: 600;
+      font-family: var(--mono);
+      width: 108px;
+    }
+
+    .chips-wrap {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      color: var(--muted);
+      padding: 4px 11px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-family: var(--mono);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s cubic-bezier(.22,.68,0,1.2);
+      letter-spacing: 0.02em;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chip:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-hi);
+      color: var(--text);
+      background: rgba(126,184,255,0.06);
+    }
+
+    .chip.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(126,184,255,0.1);
+      box-shadow: 0 0 10px rgba(126,184,255,0.12), inset 0 0 10px rgba(126,184,255,0.04);
+    }
+
+    .chip.total.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: var(--gold-soft);
+      box-shadow: 0 0 10px rgba(226,185,106,0.12);
+    }
+
+    .divider { width: 1px; min-height: 36px; background: var(--border); align-self: stretch; }
+
+    .reset-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 5px 12px;
+      background: transparent;
+      cursor: pointer;
+      align-self: center;
+    }
+
+    .reset-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(255,107,138,0.06);
+    }
+
+    .container {
+      padding: 28px 28px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: linear-gradient(170deg, rgba(12,18,32,0.98) 0%, rgba(8,13,24,0.98) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.02) inset,
+        0 24px 48px rgba(0,0,0,0.45),
+        0 1px 0 rgba(126,184,255,0.08) inset;
+      animation: cardReveal 0.5s ease both;
+    }
+
+    .card:nth-child(2) { animation-delay: 0.1s; }
+
+    @keyframes cardReveal {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-head {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, transparent 100%);
+    }
+
+    .card-title { display: flex; align-items: center; gap: 10px; }
+
+    .card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .card-icon.blue  { background: rgba(126,184,255,0.12); color: var(--accent); border: 1px solid rgba(126,184,255,0.2); }
+    .card-icon.violet { background: rgba(167,139,250,0.12); color: var(--accent2); border: 1px solid rgba(167,139,250,0.2); }
+
+    .card-head h2 {
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text);
+    }
+
+    .card-sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .card-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface3) transparent;
+    }
+
+    .table-wrap::-webkit-scrollbar { height: 4px; }
+    .table-wrap::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 2px; }
+
+    table { width: 100%; border-collapse: collapse; min-width: 680px; }
+    table colgroup col:first-child { width: 210px; }
+
+    thead tr { background: rgba(10,17,35,0.8); }
+
+    th {
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      position: relative;
+    }
+
+    th:first-child { text-align: left; padding-left: 20px; color: var(--muted); }
+    th.total-col { color: var(--gold); }
+
+    th:not(:first-child)::before {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 12px;
+      background: var(--border);
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    td {
+      padding: 9px 14px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      border-bottom: 1px solid rgba(42,54,80,0.4);
+      color: var(--muted);
+    }
+
+    td:first-child {
+      text-align: left;
+      padding-left: 20px;
+      font-family: var(--sans);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    td.total-col { font-weight: 600; color: var(--text); }
+
+    #tableOne th:not(:first-child), #tableTwo th:not(:first-child) {
+      color: #9fd0ff;
+      font-weight: 700;
+      text-shadow: 0 0 8px rgba(126, 184, 255, 0.35);
+    }
+
+    #tableOne th.total-col, #tableTwo th.total-col {
+      color: #ffd98a;
+      text-shadow: 0 0 10px rgba(226, 185, 106, 0.45);
+    }
+
+    #tableOne td:not(:first-child), #tableTwo td:not(:first-child) {
+      color: #ffffff !important;
+      font-weight: 700;
+    }
+
+    tbody tr:nth-child(even) td { background: rgba(255,255,255,0.012); }
+    tbody tr:hover td { background: rgba(126,184,255,0.06); }
+    tbody tr:hover td:first-child { color: var(--accent); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    td.metric-name::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 12px;
+      border-radius: 2px;
+      background: var(--accent);
+      margin-right: 8px;
+      vertical-align: middle;
+      opacity: 0.5;
+    }
+
+    .val-high  { color: var(--green) !important; }
+    .val-mid   { color: var(--cyan)  !important; }
+    .val-low   { color: var(--muted) !important; }
+    .val-zero  { color: var(--dim)   !important; }
+    .val-rev   { color: var(--gold)  !important; font-weight: 600; }
+
+    .footer-rule {
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--border-hi) 30%, var(--border-hi) 70%, transparent 100%);
+      margin: 0 28px;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 640px) {
+      .header { padding: 0 16px; }
+      .filters { padding: 10px 16px; }
+      .container { padding: 16px 16px 32px; }
+      .filter-label { width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-mark">P</div>
+      <div class="header-title-block">
+        <h1>Plutus <span>·</span> Team performance</h1>
+        <div class="header-meta">
+          <span id="currentMonth">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      <span id="lastUpdated">Loading…</span>
+    </div>
+  </header>
+
+  <div class="filters">
+    <div class="filters-stack">
+      <div class="filter-row">
+        <span class="filter-label">Team</span>
+        <div id="teamFilters" class="chips-wrap"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">BDA email</span>
+        <div id="emailFilters" class="chips-wrap"></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button type="button" class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+  </div>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          <div class="card-icon blue">📊</div>
+          <div>
+            <h2>Performance overview</h2>
+            <div class="card-sub">Leads · connection · VC · sales · revenue</div>
+          </div>
+        </div>
+        <span class="card-badge" id="t1Badge">10 metrics</span>
+      </div>
+      <div class="table-wrap">
+        <table id="tableOne">
+          <colgroup><col><col><col><col><col><col></colgroup>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Week 1</th>
+              <th>Week 2</th>
+              <th>Week 3</th>
+              <th>Week 4</th>
+              <th class="total-col">Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          <div class="card-icon violet">🎯</div>
+          <div>
+            <h2>Pipeline &amp; buckets</h2>
+            <div class="card-sub">Assignments · freepool · bucket mix</div>
+          </div>
+        </div>
+        <span class="card-badge" id="t2Badge">10 metrics</span>
+      </div>
+      <div class="table-wrap">
+        <table id="tableTwo">
+          <colgroup><col><col><col><col><col><col></colgroup>
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Week 1</th>
+              <th>Week 2</th>
+              <th>Week 3</th>
+              <th>Week 4</th>
+              <th class="total-col">Total</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="footer-rule"></div>
+
+  <script>
+    const API_CANDIDATES = [
+      "/.netlify/functions/data",
+      "http://127.0.0.1:8001/.netlify/functions/data",
+      "http://localhost:8001/.netlify/functions/data"
+    ];
+    const BOOKMARK_API_CANDIDATES = (() => {
+      const list = [];
+      try {
+        if (window.location && window.location.origin && window.location.protocol !== "file:") {
+          list.push(`${window.location.origin}/.netlify/functions/bookmarks`);
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      list.push(
+        "/.netlify/functions/bookmarks",
+        "http://127.0.0.1:8001/.netlify/functions/bookmarks",
+        "http://localhost:8001/.netlify/functions/bookmarks",
+        "http://127.0.0.1:8000/.netlify/functions/bookmarks",
+        "http://localhost:8000/.netlify/functions/bookmarks"
+      );
+      return list;
+    })();
+    const CSV_CACHE_KEY = "plutus_dashboard_3_csv_v1";
+    const BOOKMARK_CSV_CACHE_KEY = "plutus_dashboard_3_bookmarks_v1";
+    const FETCH_TIMEOUT_MS = 20000;
+    const MAX_RETRIES_PER_SOURCE = 3;
+    const WEEK_KEY = "week";
+    /** Same pattern as Plutus 2.0 `SOURCE_KEY` / `sources` — filter column for team chips. */
+    const TEAM_KEY = "team";
+    const EMAIL_KEY = "employeeEmail";
+    const WEEK_COLS = ["Week 1", "Week 2", "Week 3", "Week 4"];
+    const TABLE_COLS = [...WEEK_COLS, "Total"];
+
+    const TABLE_ONE_METRICS = [
+      "Total Leads",
+      "Connected %",
+      "CPL Connected",
+      "CPL NC",
+      "Interested",
+      "VC Scheduled",
+      "VC Done",
+      "Total_Sale",
+      "Revenue",
+      "CVR"
+    ];
+
+    const TABLE_TWO_METRICS = [
+      "MTD Assign",
+      "Freepool",
+      "COLD / DEAD",
+      "NURTURE",
+      "WARM/NI",
+      "WARM Int",
+      "HOT / ACTIVE",
+      "CLOSURE / PAYMENT",
+      "Bookmark Count",
+      "Bookmark Age"
+    ];
+
+    const BUCKET_EXACT = [
+      "COLD / DEAD",
+      "NURTURE",
+      "WARM/NI",
+      "WARM Int",
+      "HOT / ACTIVE",
+      "CLOSURE / PAYMENT"
+    ];
+
+    let ALL_DATA = [];
+    /** Bookmark query rows: `{ leadMobileNorm, bookmarkedBy }` (digits-only phone, lowercased email). */
+    let ALL_BOOKMARK_ROWS = [];
+    /** Distinct `team` strings from the loaded CSV (sorted). */
+    let teamValues = [];
+    let activeTeams = new Set();
+    /** Canonical team per email from sheet (latest Assign_Date wins on conflict). */
+    let emailToTeam = new Map();
+    /** Email chips currently shown (all sheet emails, or only those mapped to selected teams). */
+    let emailValues = [];
+    let activeEmails = new Set();
+
+    function hasValue(v) { return v !== undefined && v !== null && String(v).trim() !== ""; }
+
+    /** Match bookmark `LeadMobile` to main `leadMobile` (digits only). */
+    function normalizeLeadPhoneKey(v) {
+      return String(v || "").replace(/\D/g, "");
+    }
+    function parseNumber(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
+    function isNonZeroValue(v) {
+      if (!hasValue(v)) return false;
+      const s = String(v).trim();
+      const n = Number(s);
+      return Number.isFinite(n) ? n !== 0 : s.toLowerCase() !== "0";
+    }
+
+    function leadMobileCount(rows, pred = () => true) {
+      return rows.reduce((c, r) => (hasValue(r.leadMobile) && pred(r) ? c + 1 : c), 0);
+    }
+
+    function pct(n, d) { return d <= 0 ? 0 : (n / d) * 100; }
+
+    function isConnectedLead(r) {
+      return r.connected > 0 && r.callDuration >= 0.4;
+    }
+
+    function normalizeWeek(value) {
+      const s = String(value || "").trim();
+      if (!s) return "";
+      let m = s.match(/week\s*(\d+)/i);
+      if (m) return `Week ${m[1]}`;
+      m = s.match(/^(\d+)$/);
+      if (m) return `Week ${m[1]}`;
+      m = s.match(/^w\s*(\d+)$/i);
+      if (m) return `Week ${m[1]}`;
+      return "";
+    }
+
+    function normHeaderKey(k) {
+      return String(k || "")
+        .replace(/^\ufeff/, "")
+        .replace(/[\s_\-]+/g, "")
+        .toLowerCase();
+    }
+
+    /** Resolve CSV column when Redash / exports vary casing or spacing. */
+    function pickField(raw, candidates) {
+      for (const c of candidates) {
+        if (raw[c] !== undefined && raw[c] !== null && String(raw[c]).trim() !== "") {
+          return String(raw[c]).trim();
+        }
+      }
+      const want = new Set(candidates.map((c) => normHeaderKey(c)));
+      for (const k of Object.keys(raw)) {
+        if (!want.has(normHeaderKey(k))) continue;
+        const v = raw[k];
+        if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+      }
+      return "";
+    }
+
+    function sniffDelimiter(headerLine) {
+      const tabs = (headerLine.match(/\t/g) || []).length;
+      const commas = (headerLine.match(/,/g) || []).length;
+      const semis = (headerLine.match(/;/g) || []).length;
+      if (tabs > 0 && tabs >= commas) return "\t";
+      if (semis > commas && semis > 4) return ";";
+      return ",";
+    }
+
+    /** Comma or semicolon; respects double-quoted fields. */
+    function parseDelimitedLine(line, delimiter) {
+      const out = [];
+      let cur = "";
+      let q = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (q) {
+          if (c === '"') {
+            if (line[i + 1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              q = false;
+            }
+          } else {
+            cur += c;
+          }
+        } else if (c === '"') {
+          q = true;
+        } else if (c === delimiter) {
+          out.push(cur);
+          cur = "";
+        } else {
+          cur += c;
+        }
+      }
+      out.push(cur);
+      return out;
+    }
+
+    function splitDataLine(line, delim) {
+      if (delim === "\t") {
+        return line.split("\t").map((cell) =>
+          String(cell || "")
+            .replace(/^\s*"\s*|\s*"\s*$/g, "")
+            .trim()
+        );
+      }
+      return parseDelimitedLine(line, delim);
+    }
+
+    function guessTeamFromRow(raw) {
+      const scored = [];
+      for (const [k, v] of Object.entries(raw)) {
+        const s = String(v || "").trim();
+        if (!/^Team\s+/i.test(s)) continue;
+        const nk = normHeaderKey(k);
+        let score = 0;
+        if (nk.includes("team")) score += 15;
+        if (nk.includes("bd") || nk.includes("pod")) score += 5;
+        scored.push({ score, s });
+      }
+      scored.sort((a, b) => b.score - a.score);
+      return scored.length ? scored[0].s : "";
+    }
+
+    function normalizeRow(raw) {
+      const weekRaw =
+        raw.week ??
+        raw.Week ??
+        raw["Week::multi-filter"] ??
+        raw["week"] ??
+        "";
+      let teamVal = pickField(raw, ["team", "Team", "TEAM", "Team Name", "team_name", "TeamName"]);
+      if (!teamVal) teamVal = guessTeamFromRow(raw);
+      let emailVal = pickField(raw, [
+        "employeeEmail",
+        "EmployeeEmail",
+        "Employee Email",
+        "employee_email",
+        "BDA Email",
+        "bda_email",
+        "Employee_Email"
+      ]);
+      const assignVal = pickField(raw, [
+        "Assign_Date",
+        "Assign Date",
+        "assign_date",
+        "AssignDate",
+        "Assignment_Date"
+      ]);
+      return {
+        ...raw,
+        team: teamVal,
+        employeeEmail: String(emailVal || "").trim().toLowerCase(),
+        week: weekRaw,
+        leadMobile: pickField(raw, ["leadMobile", "Lead Mobile", "lead_mobile", "LeadMobile"]) || "",
+        connected: parseNumber(raw.connected ?? raw.Connected),
+        callDuration: parseNumber(raw.Call_Duration ?? raw["Call Duration"]),
+        cpl: parseNumber(raw.CPL ?? raw.cpl),
+        revenue: parseNumber(raw.revenue ?? raw.Revenue),
+        bucket: String(raw.Bucket || raw.bucket || "").trim(),
+        state: String(raw.State || "").trim(),
+        openClosed: String(raw.Open_Closed || raw["Open_Closed"] || "").trim(),
+        lead_status: String(raw.lead_status || "").trim(),
+        currentStatus: String(raw.currentStatus || "").trim(),
+        assignDateRaw: assignVal,
+        paymentType: String(raw.Payment_type || "").trim(),
+        vcSch: raw["VC_Sch"],
+        vcDate: raw["VC Date"],
+        txnDate: raw.Txn_date
+      };
+    }
+
+    function parseCsvRawRows(csv) {
+      const text = String(csv || "").replace(/^\ufeff/, "").trim();
+      const lines = text.split(/\r?\n/).filter((ln) => ln.length);
+      if (!lines.length) return [];
+      const delim = sniffDelimiter(lines[0]);
+      const headers = splitDataLine(lines[0], delim).map((h) => h.trim().replace(/^\ufeff/, ""));
+      return lines
+        .slice(1)
+        .map((line) => {
+          if (!String(line).trim()) return null;
+          const vals = splitDataLine(line, delim);
+          const row = {};
+          headers.forEach((h, i) => {
+            row[h] = vals[i] !== undefined ? String(vals[i]).trim() : "";
+          });
+          return row;
+        })
+        .filter(Boolean);
+    }
+
+    function parseCSV(csv) {
+      return parseCsvRawRows(csv).map(normalizeRow).filter(Boolean);
+    }
+
+    function normalizeBookmarkRow(raw) {
+      const lm = pickField(raw, ["LeadMobile", "leadMobile", "lead_mobile", "Lead Mobile"]);
+      const by = String(
+        pickField(raw, ["BookmarkedBy", "bookmarkedBy", "bookmarked_by", "Bookmarked By"]) || ""
+      )
+        .trim()
+        .toLowerCase();
+      const phone = normalizeLeadPhoneKey(lm);
+      if (!phone || !by) return null;
+      const weekRaw = pickField(raw, ["Week", "week", "WEEK"]);
+      const team = pickField(raw, ["Team", "team", "TEAM", "Team Name", "team_name"]);
+      const ageRaw = pickField(raw, ["Bookmark age", "Bookmark Age", "bookmark_age", "BookmarkAge", "bookmarkage"]);
+      return {
+        leadMobileNorm: phone,
+        bookmarkedBy: by,
+        weekRaw,
+        team: String(team || "").trim(),
+        bookmarkAge: hasValue(ageRaw) ? parseNumber(ageRaw) : NaN
+      };
+    }
+
+    function parseBookmarkCsv(csv) {
+      try {
+        return parseCsvRawRows(csv).map(normalizeBookmarkRow).filter(Boolean);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    /**
+     * **Bookmark Count only:** raw row count from the bookmark CSV (same row can repeat `LeadMobile`).
+     * Other Table 2 metrics still use `leadMobileCount` / unique-lead logic unchanged.
+     * Optional: team / BDA chips filter bookmark `Team` / `BookmarkedBy`; week columns use bookmark `Week`.
+     */
+    function bookmarkRowCount(bookmarkWeekColumn) {
+      if (!ALL_BOOKMARK_ROWS.length) return 0;
+      let n = 0;
+      for (const b of ALL_BOOKMARK_ROWS) {
+        if (teamFilterRestrictsRows()) {
+          const tm = String(b.team || "").trim();
+          if (!activeTeams.has(tm)) continue;
+        }
+        if (emailFilterRestrictsRows() && !activeEmails.has(b.bookmarkedBy)) continue;
+        if (bookmarkWeekColumn !== undefined && bookmarkWeekColumn !== "Total") {
+          if (normalizeWeek(b.weekRaw) !== bookmarkWeekColumn) continue;
+        }
+        n++;
+      }
+      return n;
+    }
+
+    /**
+     * Average **Bookmark age** from the bookmark CSV for the table week column (bookmark `Week`);
+     * same team / BDA filters as Bookmark Count. Rows without a numeric age are skipped.
+     */
+    function bookmarkAverageAge(bookmarkWeekColumn) {
+      if (!ALL_BOOKMARK_ROWS.length) return null;
+      let sum = 0;
+      let cnt = 0;
+      for (const b of ALL_BOOKMARK_ROWS) {
+        if (teamFilterRestrictsRows()) {
+          const tm = String(b.team || "").trim();
+          if (!activeTeams.has(tm)) continue;
+        }
+        if (emailFilterRestrictsRows() && !activeEmails.has(b.bookmarkedBy)) continue;
+        if (bookmarkWeekColumn !== undefined && bookmarkWeekColumn !== "Total") {
+          if (normalizeWeek(b.weekRaw) !== bookmarkWeekColumn) continue;
+        }
+        if (!Number.isFinite(b.bookmarkAge)) continue;
+        sum += b.bookmarkAge;
+        cnt++;
+      }
+      return cnt > 0 ? sum / cnt : null;
+    }
+
+    function removeAggregateTotals(rows) {
+      return rows.filter((r) => {
+        const wk = String(r[WEEK_KEY] || "").trim().toLowerCase();
+        const tm = String(r.team || "").trim().toLowerCase();
+        const em = String(r.employeeEmail || "").trim().toLowerCase();
+        return wk !== "total" && tm !== "total" && em !== "total";
+      });
+    }
+
+    function parseAssignDate(s) {
+      if (!hasValue(s)) return null;
+      const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return null;
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function isAssignDateMTD(r) {
+      const d = parseAssignDate(r.assignDateRaw);
+      if (!d) return false;
+      const now = new Date();
+      if (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return false;
+      return d.getDate() <= now.getDate();
+    }
+
+    /** Normalise `State` for comparison (case / underscores / spacing). */
+    function normStateKey(s) {
+      return String(s || "")
+        .trim()
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\s+/g, " ");
+    }
+
+    /** `lead_status` equals Moved_to_freepool (case / underscore agnostic); uses `leadMobile` via `leadMobileCount`. */
+    function isMovedToFreepoolLeadStatus(r) {
+      return normStateKey(r.lead_status) === "moved to freepool";
+    }
+
+    function isLeadStatusOtherThanMovedToFreepool(r) {
+      return normStateKey(r.lead_status) !== "moved to freepool";
+    }
+
+    const INTERESTED_STATE_KEYS = new Set([
+      "interested",
+      "promise to pay",
+      "vc booked",
+      "vc done"
+    ]);
+
+    function isInterestedState(r) {
+      return INTERESTED_STATE_KEYS.has(normStateKey(r.state));
+    }
+
+    /** Interested % numerator: strict connected + `State` in allowed set (+ `leadMobile`). */
+    function isInterestedMetricRow(r) {
+      return hasValue(r.leadMobile) && isConnectedLead(r) && isInterestedState(r);
+    }
+
+    /** VC_Sch present in export (non-empty cell, not the literal "null"). */
+    function vcSchIsNotNull(r) {
+      if (r.vcSch === undefined || r.vcSch === null) return false;
+      const s = String(r.vcSch).trim();
+      if (!s) return false;
+      if (s.toLowerCase() === "null") return false;
+      return true;
+    }
+
+    /** VC Date present in export (non-empty cell, not the literal "null"). */
+    function vcDateIsNotNull(r) {
+      if (r.vcDate === undefined || r.vcDate === null) return false;
+      const s = String(r.vcDate).trim();
+      if (!s) return false;
+      if (s.toLowerCase() === "null") return false;
+      return true;
+    }
+
+    /** One team per email from live rows; if the sheet disagrees, keep the team on the latest Assign_Date. */
+    function buildEmailToTeamMap(rows) {
+      const m = new Map();
+      const best = new Map();
+      for (const r of rows) {
+        const em = String(r[EMAIL_KEY] || "").trim().toLowerCase();
+        const tm = String(r[TEAM_KEY] || "").trim();
+        if (!em || !tm) continue;
+        const d = parseAssignDate(r.assignDateRaw);
+        const score = d ? d.getTime() : 0;
+        const prev = best.get(em);
+        if (!prev || score >= prev.score) best.set(em, { team: tm, score });
+      }
+      for (const [em, { team }] of best) m.set(em, team);
+      return m;
+    }
+
+    /** True when team chips represent a strict subset (not “no team filter”). */
+    function teamFilterRestrictsRows() {
+      if (teamValues.length === 0) return false;
+      if (activeTeams.size === 0) return false;
+      if (activeTeams.size === teamValues.length && teamValues.every((t) => activeTeams.has(t))) return false;
+      return true;
+    }
+
+    /** True when BDA email chips are a strict subset (same pattern as team). */
+    function emailFilterRestrictsRows() {
+      if (emailValues.length === 0) return false;
+      if (activeEmails.size === 0) return false;
+      if (activeEmails.size === emailValues.length && emailValues.every((e) => activeEmails.has(e))) return false;
+      return true;
+    }
+
+    function rebuildEmailChips() {
+      const all = [
+        ...new Set(ALL_DATA.map((r) => String(r[EMAIL_KEY] || "").trim().toLowerCase()).filter(Boolean))
+      ].sort((a, b) => a.localeCompare(b));
+      if (!teamFilterRestrictsRows()) {
+        emailValues = all;
+      } else {
+        emailValues = all.filter((e) => {
+          const t = emailToTeam.get(e);
+          return t && activeTeams.has(t);
+        });
+      }
+      const allow = new Set(emailValues);
+      for (const e of [...activeEmails]) {
+        if (!allow.has(e)) activeEmails.delete(e);
+      }
+      const ew = document.getElementById("emailFilters");
+      if (!ew) return;
+      ew.innerHTML = "";
+      ew.appendChild(makeChip("Total", "email", true));
+      emailValues.forEach((e) => {
+        const chip = makeChip(e, "email", false);
+        chip.title = e;
+        ew.appendChild(chip);
+      });
+      if (emailValues.length === 0 && ALL_DATA.length) {
+        const hint = document.createElement("span");
+        hint.className = "chip";
+        hint.style.cursor = "default";
+        hint.style.opacity = "0.75";
+        hint.textContent = teamFilterRestrictsRows()
+          ? "No BDA emails for selected team(s) — check team / employeeEmail in CSV"
+          : "No employeeEmail in CSV — check column header";
+        ew.appendChild(hint);
+      }
+    }
+
+    /** Same chip pattern as Plutus 2.0 `makeChip` / `toggleChip` / `syncGroup` for `sources`. */
+    function buildFilters() {
+      teamValues = [...new Set(ALL_DATA.map((r) => String(r[TEAM_KEY] || "").trim()).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b)
+      );
+      emailToTeam = buildEmailToTeamMap(ALL_DATA);
+      for (const t of [...activeTeams]) {
+        if (!teamValues.includes(t)) activeTeams.delete(t);
+      }
+      const tw = document.getElementById("teamFilters");
+      if (tw) {
+        tw.innerHTML = "";
+        tw.appendChild(makeChip("Total", "team", true));
+        teamValues.forEach((t) => tw.appendChild(makeChip(t, "team", false)));
+        if (teamValues.length === 0 && ALL_DATA.length) {
+          const hint = document.createElement("span");
+          hint.className = "chip";
+          hint.style.cursor = "default";
+          hint.style.opacity = "0.75";
+          hint.textContent = "No team values in CSV — check team column";
+          tw.appendChild(hint);
+        }
+      }
+      rebuildEmailChips();
+    }
+
+    function makeChip(value, type, isTotal) {
+      const chip = document.createElement("span");
+      chip.className = `chip${isTotal ? " total" : ""}`;
+      chip.textContent = isTotal ? "Total" : value;
+      chip.onclick = () => toggleChip(type, value, isTotal);
+      return chip;
+    }
+
+    function setAll(type, on) {
+      if (type === "team") {
+        activeTeams.clear();
+        if (on) teamValues.forEach((v) => activeTeams.add(v));
+        return;
+      }
+      if (type === "email") {
+        activeEmails.clear();
+        if (on) emailValues.forEach((v) => activeEmails.add(v));
+      }
+    }
+
+    function toggleChip(type, value, isTotal) {
+      if (type === "team") {
+        const vals = teamValues;
+        const set = activeTeams;
+        if (isTotal) {
+          setAll(type, !(set.size === vals.length && vals.length > 0));
+        } else {
+          set.has(value) ? set.delete(value) : set.add(value);
+        }
+        rebuildEmailChips();
+        syncChipStates();
+        renderTables();
+        return;
+      }
+      if (type === "email") {
+        const vals = emailValues;
+        const set = activeEmails;
+        if (isTotal) {
+          setAll(type, !(set.size === vals.length && vals.length > 0));
+        } else {
+          set.has(value) ? set.delete(value) : set.add(value);
+        }
+        syncChipStates();
+        renderTables();
+      }
+    }
+
+    function syncChipStates() {
+      syncGroup(teamValues, activeTeams, "teamFilters");
+      syncGroup(emailValues, activeEmails, "emailFilters");
+    }
+
+    function syncGroup(values, activeSet, id) {
+      const wrap = document.getElementById(id);
+      if (!wrap) return;
+      const chips = wrap.querySelectorAll(".chip");
+      chips.forEach((chip) => {
+        chip.classList.remove("active");
+        if (chip.textContent === "Total") {
+          if (activeSet.size === values.length && values.length > 0) chip.classList.add("active");
+        } else if (activeSet.has(chip.textContent)) {
+          chip.classList.add("active");
+        }
+      });
+    }
+
+    function resetFilters() {
+      activeTeams.clear();
+      activeEmails.clear();
+      rebuildEmailChips();
+      syncChipStates();
+      renderTables();
+    }
+
+    function filteredRows() {
+      return ALL_DATA.filter((r) => {
+        const team = String(r[TEAM_KEY] || "").trim();
+        if (activeTeams.size > 0 && !activeTeams.has(team)) return false;
+        const em = String(r[EMAIL_KEY] || "").trim().toLowerCase();
+        if (activeEmails.size > 0 && !activeEmails.has(em)) return false;
+        return true;
+      });
+    }
+
+    function classifyCell(metric, value) {
+      if (value === null || value === undefined || !Number.isFinite(value) || value === 0) return "val-zero";
+      if (metric === "Revenue") return "val-rev";
+      if (metric === "Total Leads" || metric === "Total_Sale" || metric === "Bookmark Count" || metric === "Bookmark Age")
+        return "val-mid";
+      if (metric === "COLD / DEAD" || metric === "Freepool") return "val-low";
+      if (metric === "HOT / ACTIVE" || metric === "CLOSURE / PAYMENT") return "val-high";
+      return "";
+    }
+
+    function metricValue(rows, metric, mainFilteredRows, bookmarkWeekColumn) {
+      const mainF = mainFilteredRows != null ? mainFilteredRows : rows;
+      const totalLead = leadMobileCount(rows);
+      const connectedLead = leadMobileCount(rows, isConnectedLead);
+      const ncLead = Math.max(totalLead - connectedLead, 0);
+      const sumCplConnected = rows.reduce((s, r) => s + (isConnectedLead(r) ? r.cpl : 0), 0);
+      const sumCplNC = rows.reduce((s, r) => (!isConnectedLead(r) && hasValue(r.leadMobile) ? s + r.cpl : s), 0);
+
+      switch (metric) {
+        case "Total Leads":
+          return totalLead;
+        case "Connected %":
+          return pct(connectedLead, totalLead);
+        case "CPL Connected":
+          return connectedLead <= 0 ? 0 : sumCplConnected / connectedLead;
+        case "CPL NC":
+          return ncLead <= 0 ? 0 : sumCplNC / ncLead;
+        case "Interested": {
+          const interestedConn = leadMobileCount(rows, isInterestedMetricRow);
+          return pct(interestedConn, connectedLead);
+        }
+        case "VC Scheduled": {
+          const interestedLeads = leadMobileCount(rows, isInterestedMetricRow);
+          const withVcSch = leadMobileCount(
+            rows,
+            (r) => isInterestedMetricRow(r) && vcSchIsNotNull(r)
+          );
+          return pct(withVcSch, interestedLeads);
+        }
+        case "VC Done": {
+          const vcScheduledTotal = leadMobileCount(
+            rows,
+            (r) => isInterestedMetricRow(r) && vcSchIsNotNull(r)
+          );
+          /** Done = VC Scheduled cohort rows that also have a non-null VC Date. */
+          const done = leadMobileCount(
+            rows,
+            (r) => isInterestedMetricRow(r) && vcSchIsNotNull(r) && vcDateIsNotNull(r)
+          );
+          return pct(done, vcScheduledTotal);
+        }
+        case "Total_Sale":
+          return leadMobileCount(rows, (r) => hasValue(r.txnDate));
+        case "Revenue":
+          return rows.reduce((s, r) => s + r.revenue, 0);
+        case "CVR": {
+          const sales = leadMobileCount(rows, (r) => hasValue(r.txnDate));
+          return pct(sales, totalLead);
+        }
+        case "MTD Assign":
+          return leadMobileCount(rows, (r) => isAssignDateMTD(r));
+        case "Freepool": {
+          const fp = leadMobileCount(rows, isMovedToFreepoolLeadStatus);
+          return pct(fp, totalLead);
+        }
+        case "COLD / DEAD":
+        case "NURTURE":
+        case "WARM/NI":
+        case "WARM Int":
+        case "HOT / ACTIVE":
+        case "CLOSURE / PAYMENT": {
+          const bucketDen = leadMobileCount(rows, isLeadStatusOtherThanMovedToFreepool);
+          const bucketNum = leadMobileCount(
+            rows,
+            (r) =>
+              isLeadStatusOtherThanMovedToFreepool(r) && String(r.bucket || "").trim() === metric
+          );
+          return pct(bucketNum, bucketDen);
+        }
+        case "Bookmark Count":
+          return bookmarkRowCount(bookmarkWeekColumn);
+        case "Bookmark Age":
+          return bookmarkAverageAge(bookmarkWeekColumn);
+        default:
+          return 0;
+      }
+    }
+
+    function fmt(metric, value, tableId) {
+      if (value === null) return "—";
+      if (!Number.isFinite(value)) return "—";
+      if (value === 0 && metric !== "Revenue") {
+        if (
+          [
+            "Connected %",
+            "Interested",
+            "VC Scheduled",
+            "VC Done",
+            "CVR",
+            "Freepool"
+          ].includes(metric) ||
+          BUCKET_EXACT.includes(metric)
+        ) {
+          return "0.00%";
+        }
+        if (metric === "Bookmark Age") {
+          return "0.00";
+        }
+        if (
+          metric === "Total Leads" ||
+          metric === "Total_Sale" ||
+          metric === "MTD Assign" ||
+          metric === "Bookmark Count"
+        ) {
+          return "0";
+        }
+        return "—";
+      }
+      if (metric === "Revenue") {
+        return "₹ " + value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+      }
+      if (
+        metric === "Total Leads" ||
+        metric === "Total_Sale" ||
+        metric === "MTD Assign" ||
+        metric === "Bookmark Count"
+      ) {
+        return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      }
+      if (
+        metric === "Connected %" ||
+        metric === "Interested" ||
+        metric === "VC Scheduled" ||
+        metric === "VC Done" ||
+        metric === "CVR" ||
+        metric === "Freepool" ||
+        BUCKET_EXACT.includes(metric)
+      ) {
+        return value.toFixed(2) + "%";
+      }
+      if (metric === "CPL Connected" || metric === "CPL NC" || metric === "Bookmark Age") {
+        return value.toFixed(2);
+      }
+      return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    }
+
+    function weekRows(rows, week) {
+      return rows.filter((r) => normalizeWeek(r[WEEK_KEY]) === week);
+    }
+
+    function renderMetricTable(tableId, metricList, rows) {
+      const tbody = document.querySelector(`#${tableId} tbody`);
+      let html = "";
+      metricList.forEach((metric) => {
+        html += `<tr><td class="metric-name">${metric}</td>`;
+        TABLE_COLS.forEach((week, idx) => {
+          const targetRows = week === "Total" ? rows : weekRows(rows, week);
+          const value = metricValue(targetRows, metric, rows, week);
+          const cls = classifyCell(metric, value === null ? NaN : value);
+          const isTotal = idx === TABLE_COLS.length - 1;
+          html += `<td class="${[cls, isTotal ? "total-col" : ""].filter(Boolean).join(" ")}">${fmt(metric, value, tableId)}</td>`;
+        });
+        html += "</tr>";
+      });
+      tbody.innerHTML = html;
+    }
+
+    function renderTables() {
+      const rows = filteredRows();
+      renderMetricTable("tableOne", TABLE_ONE_METRICS, rows);
+      renderMetricTable("tableTwo", TABLE_TWO_METRICS, rows);
+    }
+
+    async function fetchWithTimeout(url, opts, ms) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), ms);
+      try {
+        return await fetch(url, {
+          ...opts,
+          signal: ctrl.signal,
+          headers: {
+            Accept: "text/csv,text/plain,*/*",
+            ...(opts && opts.headers ? opts.headers : {})
+          }
+        });
+      } finally {
+        clearTimeout(t);
+      }
+    }
+
+    /** Redash `results.csv` returns raw CSV text; reject HTML/JSON error bodies from a bad proxy. */
+    function looksLikeBookmarkCsvBody(text) {
+      const s = String(text || "").replace(/^\ufeff/, "").trim();
+      if (s.length < 12) return false;
+      const first = (s.split(/\r?\n/).find((ln) => String(ln).trim().length) || "").trim().toLowerCase();
+      if (/^[\[{]/.test(first)) return false;
+      if (/^<!doctype|^<html/i.test(first)) return false;
+      return (
+        first.includes("leadmobile") &&
+        (first.includes("bookmarkedby") || first.includes("bookmarkedon") || first.includes("bookmarked"))
+      );
+    }
+
+    function looksLikeCsvBody(text) {
+      const s = String(text || "").replace(/^\ufeff/, "").trim();
+      if (s.length < 12) return false;
+      const first = (s.split(/\r?\n/).find((ln) => String(ln).trim().length) || "").trim();
+      if (/^[\[{]/.test(first)) return false;
+      if (/^<!doctype|^<html/i.test(first)) return false;
+      const lc = first.toLowerCase();
+      const tabs = (first.match(/\t/g) || []).length;
+      const commas = (first.match(/,/g) || []).length;
+      const semis = (first.match(/;/g) || []).length;
+      if (tabs >= 2 || commas >= 2 || semis >= 2) return true;
+      if (lc.includes("employeeemail") || lc.includes("email")) return true;
+      if (lc.includes("lid") || lc.includes("lead")) return true;
+      return false;
+    }
+
+    function sleep(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    }
+
+    async function fetchCsvWithFallback() {
+      let lastErr = null;
+      for (const base of API_CANDIDATES) {
+        for (let i = 1; i <= MAX_RETRIES_PER_SOURCE; i++) {
+          try {
+            const url = `${base}${base.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+            const res = await fetchWithTimeout(url, { cache: "no-store" }, FETCH_TIMEOUT_MS);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const csv = await res.text();
+            if (!csv || !csv.trim()) throw new Error("Empty CSV");
+            if (!looksLikeCsvBody(csv)) {
+              throw new Error("Not CSV text (proxy may be returning HTML/JSON — check UPSTREAM_URL)");
+            }
+            localStorage.setItem(CSV_CACHE_KEY, csv);
+            return csv;
+          } catch (e) {
+            lastErr = e;
+            await sleep(300 * i);
+          }
+        }
+      }
+      throw lastErr || new Error("Fetch failed");
+    }
+
+    async function fetchBookmarkCsvWithFallback() {
+      let lastErr = null;
+      for (const base of BOOKMARK_API_CANDIDATES) {
+        for (let i = 1; i <= MAX_RETRIES_PER_SOURCE; i++) {
+          try {
+            const url = `${base}${base.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+            const res = await fetchWithTimeout(url, { cache: "no-store" }, FETCH_TIMEOUT_MS);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const csv = await res.text();
+            if (!csv || !csv.trim()) throw new Error("Empty bookmark CSV");
+            if (!looksLikeBookmarkCsvBody(csv)) {
+              throw new Error("Bookmark response is not CSV (check BOOKMARK_UPSTREAM_URL / bookmarks proxy)");
+            }
+            localStorage.setItem(BOOKMARK_CSV_CACHE_KEY, csv);
+            return csv;
+          } catch (e) {
+            lastErr = e;
+            await sleep(300 * i);
+          }
+        }
+      }
+      throw lastErr || new Error("Bookmark fetch failed");
+    }
+
+    function applyBookmarkCsvText(csv) {
+      try {
+        ALL_BOOKMARK_ROWS = parseBookmarkCsv(String(csv || ""));
+      } catch (_) {
+        ALL_BOOKMARK_ROWS = [];
+      }
+      renderTables();
+    }
+
+    function applyCsvText(csv, statusLabel) {
+      try {
+        ALL_DATA = removeAggregateTotals(parseCSV(csv));
+      } catch (err) {
+        ALL_DATA = [];
+        ALL_BOOKMARK_ROWS = [];
+        document.getElementById("lastUpdated").textContent =
+          "CSV parse error · " + (err && err.message ? err.message : "invalid data");
+        buildFilters();
+        syncChipStates();
+        renderTables();
+        return;
+      }
+      buildFilters();
+      syncChipStates();
+      renderTables();
+      document.getElementById("lastUpdated").textContent = statusLabel;
+    }
+
+    async function loadData() {
+      try {
+        const csv = await fetchCsvWithFallback();
+        applyCsvText(
+          csv,
+          `Live · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+        );
+        try {
+          const bm = await fetchBookmarkCsvWithFallback();
+          applyBookmarkCsvText(bm);
+        } catch (_) {
+          const cachedBm = localStorage.getItem(BOOKMARK_CSV_CACHE_KEY);
+          if (cachedBm && cachedBm.trim()) applyBookmarkCsvText(cachedBm);
+          else {
+            ALL_BOOKMARK_ROWS = [];
+            renderTables();
+          }
+        }
+      } catch (err) {
+        const cached = localStorage.getItem(CSV_CACHE_KEY);
+        if (cached && cached.trim()) {
+          applyCsvText(cached, "Cached · offline");
+          const cachedBm = localStorage.getItem(BOOKMARK_CSV_CACHE_KEY);
+          if (cachedBm && cachedBm.trim()) applyBookmarkCsvText(cachedBm);
+          else {
+            ALL_BOOKMARK_ROWS = [];
+            renderTables();
+          }
+          return;
+        }
+        ALL_DATA = [];
+        ALL_BOOKMARK_ROWS = [];
+        buildFilters();
+        syncChipStates();
+        renderTables();
+        const hint =
+          window.location && window.location.protocol === "file:"
+            ? " Open via python local_proxy_server.py (http://127.0.0.1:8001), not file://."
+            : " Set UPSTREAM_URL on Netlify or run local proxy with UPSTREAM_URL.";
+        document.getElementById("lastUpdated").textContent =
+          "Failed to load · " + (err && err.message ? err.message : "network") + hint;
+      }
+    }
+
+    document.getElementById("currentMonth").textContent = new Date().toLocaleString("en-IN", { month: "long", year: "numeric" });
+    loadData();
+    setInterval(loadData, 60 * 60 * 1000);
+  </script>
+</body>
+</html>
