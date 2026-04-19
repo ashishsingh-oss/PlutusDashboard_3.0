@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
+import socket
 import ssl
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -75,10 +77,30 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 def main():
     port = int(os.environ.get("PORT", "8000"))
-    server = ThreadingHTTPServer(("127.0.0.1", port), DashboardHandler)
-    print(f"Serving dashboard with proxy on http://127.0.0.1:{port}")
+
+    def serve_forever(server):
+        server.serve_forever()
+
+    v4 = ThreadingHTTPServer(("127.0.0.1", port), DashboardHandler)
+    threading.Thread(target=serve_forever, args=(v4,), daemon=True).start()
+
+    try:
+
+        class ThreadingHTTPServerV6(ThreadingHTTPServer):
+            address_family = socket.AF_INET6
+
+        v6 = ThreadingHTTPServerV6(("::1", port), DashboardHandler)
+        threading.Thread(target=serve_forever, args=(v6,), daemon=True).start()
+    except OSError as err:
+        print(f"Note: IPv6 loopback ::1 not bound ({err}); use http://127.0.0.1:{port} if localhost fails.")
+
+    print(f"Serving dashboard with proxy on port {port} (127.0.0.1 and ::1 when available)")
+    print("Open: http://127.0.0.1:{0} or http://localhost:{0}".format(port))
     print("Proxies: /.netlify/functions/data and /.netlify/functions/bookmarks")
-    server.serve_forever()
+    try:
+        threading.Event().wait()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
