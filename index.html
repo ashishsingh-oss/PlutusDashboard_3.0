@@ -696,7 +696,8 @@
               <th>WARM/NI</th>
               <th>WARM Int</th>
               <th>HOT / ACTIVE</th>
-              <th>CLOSURE / PAYMENT</th>
+              <th>PAYMENT LINK</th>
+              <th>SALES DONE</th>
               <th>Bookmark Count</th>
               <th>Bookmark Age</th>
             </tr>
@@ -766,7 +767,8 @@
               <th>WARM/NI</th>
               <th>WARM Int</th>
               <th>HOT / ACTIVE</th>
-              <th>CLOSURE / PAYMENT</th>
+              <th>PAYMENT LINK</th>
+              <th>SALES DONE</th>
               <th>Bookmark Count</th>
               <th>Bookmark Age</th>
             </tr>
@@ -847,7 +849,8 @@
       "WARM/NI",
       "WARM Int",
       "HOT / ACTIVE",
-      "CLOSURE / PAYMENT",
+      "PAYMENT LINK",
+      "SALES DONE",
       "Bookmark Count",
       "Bookmark Age"
     ];
@@ -858,7 +861,8 @@
       "WARM/NI",
       "WARM Int",
       "HOT / ACTIVE",
-      "CLOSURE / PAYMENT"
+      "PAYMENT LINK",
+      "SALES DONE"
     ];
     const TEAM_FILTER_OPTIONS = [
       "Team Salil (Select)",
@@ -1463,13 +1467,25 @@
       return [...set].sort((a, b) => a.localeCompare(b));
     }
 
+    /**
+     * Map funnel **display** metric to CSV `Bucket` cell (still uses same % formula as other buckets).
+     * `PAYMENT LINK` accepts legacy export value `CLOSURE / PAYMENT`.
+     */
+    function rowBucketMatchesMetricDisplay(r, metricDisplay) {
+      const b = String(r.bucket || "").trim();
+      if (metricDisplay === "PAYMENT LINK") {
+        return b === "PAYMENT LINK" || b === "CLOSURE / PAYMENT";
+      }
+      return b === metricDisplay;
+    }
+
     function classifyCell(metric, value) {
       if (value === null || value === undefined || !Number.isFinite(value) || value === 0) return "val-zero";
       if (metric === "Revenue") return "val-rev";
       if (metric === "Total Leads" || metric === "Total_Sale" || metric === "Bookmark Count" || metric === "Bookmark Age")
         return "val-mid";
       if (metric === "COLD / DEAD" || metric === "Freepool") return "val-low";
-      if (metric === "HOT / ACTIVE" || metric === "CLOSURE / PAYMENT") return "val-high";
+      if (metric === "HOT / ACTIVE" || metric === "PAYMENT LINK" || metric === "SALES DONE") return "val-high";
       return "";
     }
 
@@ -1532,12 +1548,12 @@
         case "WARM/NI":
         case "WARM Int":
         case "HOT / ACTIVE":
-        case "CLOSURE / PAYMENT": {
+        case "PAYMENT LINK":
+        case "SALES DONE": {
           const bucketDen = leadMobileCount(rows, isAvailableLeadsInBucketStatus);
           const bucketNum = leadMobileCount(
             rows,
-            (r) =>
-              isAvailableLeadsInBucketStatus(r) && String(r.bucket || "").trim() === metric
+            (r) => isAvailableLeadsInBucketStatus(r) && rowBucketMatchesMetricDisplay(r, metric)
           );
           return pct(bucketNum, bucketDen);
         }
